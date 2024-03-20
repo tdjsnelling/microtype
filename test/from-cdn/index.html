@@ -3,30 +3,29 @@
   <head>
     <meta charset="UTF-8" />
     <title>microtype demo</title>
-    <script src="../dist/microtype.js"></script>
+    <script src="../../dist/microtype.js"></script>
     <script>
       window.addEventListener("DOMContentLoaded", () => {
-        window.microtype();
+        window.microtype({
+          showFrame: true
+        });
       });
     </script>
     <style>
       * {
         box-sizing: border-box;
-        font-size: 18px;
+        font-size: 20px;
         line-height: 1.3;
       }
       body {
         padding: 40px;
       }
       .microtype {
+        font-family: "Times New Roman", serif;
         text-align: justify;
         width: 32em;
         margin: 0 auto;
         text-indent: 2em;
-        // outline: 1px solid red;
-      }
-      [data-sp] {
-        // background: red;
       }
     </style>
   </head>
