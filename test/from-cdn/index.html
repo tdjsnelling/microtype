@@ -2,14 +2,15 @@
 <html lang="en" xmlns="http://www.w3.org/1999/html">
   <head>
     <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>microtype demo</title>
     <script src="../../dist/microtype.js"></script>
     <script>
-      window.addEventListener("DOMContentLoaded", () => {
-        window.microtype({
-          showFrame: true
-        });
-      });
+      const format = () => {
+        window.microtype();
+      }
+      window.addEventListener("DOMContentLoaded", format);
+      window.addEventListener("resize", format);
     </script>
     <style>
       * {
@@ -23,7 +24,7 @@
       .microtype {
         font-family: "Times New Roman", serif;
         text-align: justify;
-        width: 32em;
+        max-width: 32em;
         margin: 0 auto;
         text-indent: 2em;
       }

@@ -54,12 +54,22 @@ function microtype({
     }
   }
 
+  // Get the list of elements to format
   const paragraphs: NodeListOf<HTMLParagraphElement> =
     document.querySelectorAll(selector);
 
   for (const paragraph of paragraphs) {
-    // Skip this paragraph if it is already formatted
-    if (paragraph.dataset.microtyped) break;
+    // Get paragraph text and empty the element of it's default contents
+    let text = paragraph.innerText;
+    paragraph.innerHTML = "";
+
+    // If this paragraph has it's original contents saved, format that
+    // Else save the current contents as original
+    if (paragraph.dataset.mt__original) {
+      text = paragraph.dataset.mt__original;
+    } else {
+      paragraph.dataset.mt__original = text;
+    }
 
     // Keep track of how many paragraphs were formatted
     counter++;
@@ -70,10 +80,6 @@ function microtype({
 
     // Ensure no default text wrapping
     paragraph.style.whiteSpace = "nowrap";
-
-    // Get paragraph text and empty the element of it's default contents
-    const text = paragraph.innerText;
-    paragraph.innerHTML = "";
 
     // Keep track of which line we're working on and how long it is
     let currentLine = 0;
@@ -94,10 +100,10 @@ function microtype({
       let lineEl: HTMLSpanElement | null;
       if ((currentLine === 0 && i === 0) || currentLineWidth === 0) {
         lineEl = document.createElement("span");
-        lineEl.dataset.li = currentLine.toString();
+        lineEl.dataset.mt__li = currentLine.toString();
         paragraph.appendChild(lineEl);
       } else {
-        lineEl = paragraph.querySelector(`span[data-li="${currentLine}"]`);
+        lineEl = paragraph.querySelector(`span[data-mt__li="${currentLine}"]`);
       }
 
       if (!lineEl) {
@@ -120,7 +126,7 @@ function microtype({
         spaceEl.innerHTML = "&nbsp;";
         lineEl.appendChild(spaceEl);
 
-        spaceEl.dataset.sp = "true";
+        spaceEl.dataset.mt__sp = "true";
 
         currentLineWidth += spaceEl.offsetWidth;
       }
@@ -180,12 +186,12 @@ function microtype({
               wordEl.innerText = head + hyphenChar;
 
               const trailingSpaceEl = lineEl.querySelector(
-                'span[data-sp="true"]:last-child',
+                'span[data-mt__sp="true"]:last-child',
               );
               if (trailingSpaceEl) trailingSpaceEl.remove();
 
               const nextLineEl = document.createElement("span");
-              nextLineEl.dataset.li = (currentLine + 1).toString();
+              nextLineEl.dataset.mt__li = (currentLine + 1).toString();
               paragraph.appendChild(nextLineEl);
 
               const remainingWord = document.createElement("span");
@@ -197,7 +203,7 @@ function microtype({
               remainingWordSpaceEl.innerHTML = "&nbsp;";
               nextLineEl.appendChild(remainingWordSpaceEl);
 
-              remainingWordSpaceEl.dataset.sp = "true";
+              remainingWordSpaceEl.dataset.mt__sp = "true";
 
               const breakEl = document.createElement("br");
               lineEl.appendChild(breakEl);
@@ -229,7 +235,7 @@ function microtype({
 
         // Remove any trailing space from the line
         const trailingSpaceEl = lineEl.querySelector(
-          'span[data-sp="true"]:last-child',
+          'span[data-mt__sp="true"]:last-child',
         );
         if (trailingSpaceEl) trailingSpaceEl.remove();
 
@@ -242,7 +248,7 @@ function microtype({
           currentLineWidth = 0;
         } else {
           const existingNextLine: HTMLSpanElement | null =
-            paragraph.querySelector(`span[data-li="${currentLine + 1}"]`);
+            paragraph.querySelector(`span[data-mt__li="${currentLine + 1}"]`);
 
           currentLineWidth = existingNextLine?.offsetWidth ?? 0;
         }
@@ -254,7 +260,7 @@ function microtype({
 
     // Get all of the now hyphenated & wrapped lines
     const lines: NodeListOf<HTMLSpanElement> =
-      paragraph.querySelectorAll("span[data-li]");
+      paragraph.querySelectorAll("span[data-mt__li]");
 
     // For each line, adjust inter-word and inter-letter spacing to get as close as possible to target width
     lines.forEach((lineEl, i) => {
@@ -278,7 +284,7 @@ function microtype({
 
       // Get all of the spaces in the line
       const spaces: NodeListOf<HTMLSpanElement> = lineEl.querySelectorAll(
-        'span[data-sp="true"]',
+        'span[data-mt__sp="true"]',
       );
 
       // If the line is wider than the target, distribute the difference and shrink all spaces
@@ -319,9 +325,6 @@ function microtype({
         lineEl.style.letterSpacing = `${letterDiff}px`;
       }
     });
-
-    // Flag that this paragraph has been formatted
-    paragraph.dataset.microtyped = "true";
   }
 
   // Print some useful meta info
