@@ -1,0 +1,23 @@
+{
+  "name": "microtype",
+  "version": "1.0.0",
+  "main": "dist/microtype.js",
+  "license": "MIT",
+  "scripts": {
+    "build": "esbuild src/microtype.ts --watch --bundle --minify --sourcemap --loader:.ts=ts --target=es6 --outfile=dist/microtype.js"
+  },
+  "devDependencies": {
+    "@types/hyphen": "^1.6.7",
+    "@typescript-eslint/eslint-plugin": "^7.3.1",
+    "@typescript-eslint/parser": "^7.3.1",
+    "esbuild": "^0.20.2",
+    "eslint": "^8.57.0",
+    "eslint-config-prettier": "^9.1.0",
+    "eslint-plugin-prettier": "^5.1.3",
+    "prettier": "^3.2.5",
+    "typescript": "^5.4.2"
+  },
+  "dependencies": {
+    "hyphen": "^1.10.4"
+  }
+}
