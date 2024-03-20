@@ -2,7 +2,7 @@
   "name": "microtype",
   "version": "1.0.0",
   "main": "dist/microtype.js",
-  "license": "MIT",
+  "license": "ISC",
   "scripts": {
     "build": "esbuild src/microtype.ts --watch --bundle --minify --sourcemap --loader:.ts=ts --target=es6 --outfile=dist/microtype.js"
   },

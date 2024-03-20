@@ -1,17 +1,29 @@
 import { hyphenateSync } from "hyphen/en";
 
-const defaultOptions = {
+type MicrotypeOptions = {
+  selector: string;
+  maxSpaceShrink: number;
+  maxSpaceGrow: number;
+  maxTrackingShrink: number;
+  maxTrackingGrow: number;
+  protrusion: { [key: string]: number };
+  hyphenate: boolean;
+};
+
+const defaultOptions: MicrotypeOptions = {
   selector: "p.microtype",
   maxSpaceShrink: 0.15, // How much space characters can shrink (em)
-  maxSpaceGrow: 0.2, // How much space characters can grow (em)
+  maxSpaceGrow: 0.25, // How much space characters can grow (em)
   maxTrackingShrink: 0.01, // How much letter spacing can shrink (em)
   maxTrackingGrow: 0.01, // How much letter spacing can grow (em)
   protrusion: {
-    ",": 0.15,
-    ".": 0.2,
-    "!": 0.15,
-    "-": 0.25,
+    // How much certain characters may protrude from the right margin (em)
+    ",": 0.1,
+    ".": 0.15,
+    "!": 0.1,
+    "-": 0.2,
   },
+  hyphenate: true, // Whether or not words may hyphenate across lines
 };
 
 (window as any).microtype = function ({
@@ -21,23 +33,23 @@ const defaultOptions = {
   maxTrackingShrink = defaultOptions.maxTrackingShrink,
   maxTrackingGrow = defaultOptions.maxTrackingGrow,
   protrusion = defaultOptions.protrusion,
-}: {
-  selector: string;
-  maxSpaceShrink: number;
-  maxSpaceGrow: number;
-  maxTrackingShrink: number;
-  maxTrackingGrow: number;
-  protrusion: { [key: string]: number };
-} = defaultOptions) {
+  hyphenate = defaultOptions.hyphenate,
+}: MicrotypeOptions = defaultOptions) {
   const t0 = Date.now();
   console.log("microtype: initialising...");
+
+  const styleEl = document.createElement("style");
+  document.head.appendChild(styleEl);
+  const styleSheet = styleEl.sheet;
+  if (styleSheet)
+    styleSheet.insertRule(`${selector} span { text-indent: 0!important }`, 0);
 
   const paragraphs: NodeListOf<HTMLParagraphElement> =
     document.querySelectorAll(selector);
 
   for (const paragraph of paragraphs) {
-    const targetWidth = paragraph.offsetWidth;
     const em = parseFloat(getComputedStyle(paragraph).fontSize);
+    const indent = parseFloat(getComputedStyle(paragraph).textIndent);
 
     paragraph.style.whiteSpace = "nowrap";
 
@@ -45,15 +57,19 @@ const defaultOptions = {
     paragraph.innerHTML = "";
 
     let currentLine = 0;
-    let currentLineWidth = 0;
+    let currentLineWidth = currentLine === 0 ? indent : 0;
+
+    let targetWidth;
 
     const words = text.split(" ");
 
     for (let i = 0; i < words.length; i++) {
       const word = words[i];
 
+      targetWidth = paragraph.offsetWidth - (currentLine === 0 ? indent : 0);
+
       let lineEl: HTMLSpanElement | null;
-      if (currentLineWidth === 0) {
+      if ((currentLine === 0 && i === 0) || currentLineWidth === 0) {
         lineEl = document.createElement("span");
         lineEl.dataset.li = currentLine.toString();
         paragraph.appendChild(lineEl);
@@ -72,9 +88,6 @@ const defaultOptions = {
 
       currentLineWidth += wordEl.offsetWidth;
 
-      wordEl.dataset.ww = wordEl.offsetWidth.toString();
-      wordEl.dataset.lw = currentLineWidth.toString();
-
       let spaceEl;
       if (words[i + 1]) {
         spaceEl = document.createElement("span");
@@ -85,10 +98,6 @@ const defaultOptions = {
         spaceEl.dataset.sp = "true";
 
         currentLineWidth += spaceEl.offsetWidth;
-
-        spaceEl.dataset.ww = spaceEl.offsetWidth.toString();
-        spaceEl.dataset.lw = currentLineWidth.toString();
-        spaceEl.dataset.pw = word;
       }
 
       if (currentLineWidth >= targetWidth) {
@@ -98,69 +107,76 @@ const defaultOptions = {
 
         let didHyphenate = false;
 
-        const hyphenChar = "-";
-        const hyphenated = hyphenateSync(word, {
-          hyphenChar,
-        });
+        if (hyphenate) {
+          const hyphenChar = "-";
+          const hyphenated = hyphenateSync(word, {
+            hyphenChar,
+          });
 
-        const split = hyphenated.split(hyphenChar);
+          const split = hyphenated.split(hyphenChar);
 
-        let bestWidthDiff = widthOver;
-        let bestSegments = [word];
+          let bestWidthDiff = widthOver;
+          let bestSegments = [word];
 
-        if (split.length > 1) {
-          const nOptions = split.length - 1;
-          for (let j = 1; j <= nOptions; j++) {
-            const head = split.slice(0, j);
-            const tail = split.slice(j);
-
-            wordEl.innerText = head.join("") + hyphenChar;
-
-            const newWidth = lineEl.offsetWidth;
-            const newDiff = Math.abs(newWidth - targetWidth);
-
-            if (newDiff < bestWidthDiff) {
-              bestWidthDiff = newDiff;
-              bestSegments = [head.join(""), tail.join("")];
-            }
-          }
-
-          const [head, tail] = bestSegments;
-
-          if (tail) {
-            wordEl.innerText = head + hyphenChar;
-
-            const trailingSpaceEl = lineEl.querySelector(
-              'span[data-sp="true"]:last-child',
+          if (split.length > 1) {
+            const widthWordRemoved = Math.abs(
+              targetWidth - currentLineWidth - wordEl.offsetWidth,
             );
-            if (trailingSpaceEl) trailingSpaceEl.remove();
+            if (widthWordRemoved < bestWidthDiff) {
+              bestWidthDiff = widthWordRemoved;
+              bestSegments = [];
+            }
 
-            const nextLineEl = document.createElement("span");
-            nextLineEl.dataset.li = (currentLine + 1).toString();
-            paragraph.appendChild(nextLineEl);
+            const nOptions = split.length - 1;
+            for (let j = 1; j <= nOptions; j++) {
+              const head = split.slice(0, j);
+              const tail = split.slice(j);
 
-            const remainingWord = document.createElement("span");
-            remainingWord.innerText = tail;
-            nextLineEl.appendChild(remainingWord);
+              wordEl.innerText = head.join("") + hyphenChar;
 
-            const remainingWordSpaceEl = document.createElement("span");
+              const newWidth = lineEl.offsetWidth;
+              const newDiff = Math.abs(newWidth - targetWidth);
 
-            remainingWordSpaceEl.innerHTML = "&nbsp;";
-            nextLineEl.appendChild(remainingWordSpaceEl);
+              if (newDiff < bestWidthDiff) {
+                bestWidthDiff = newDiff;
+                bestSegments = [head.join(""), tail.join("")];
+              }
+            }
 
-            remainingWordSpaceEl.dataset.sp = "true";
-            remainingWordSpaceEl.dataset.pw = tail;
+            const [head, tail] = bestSegments;
 
-            const breakEl = document.createElement("br");
-            lineEl.appendChild(breakEl);
+            if (tail) {
+              wordEl.innerText = head + hyphenChar;
 
-            currentLineWidth -= nextLineEl.offsetWidth;
+              const trailingSpaceEl = lineEl.querySelector(
+                'span[data-sp="true"]:last-child',
+              );
+              if (trailingSpaceEl) trailingSpaceEl.remove();
 
-            wordEl.dataset.lw = currentLineWidth.toString();
+              const nextLineEl = document.createElement("span");
+              nextLineEl.dataset.li = (currentLine + 1).toString();
+              paragraph.appendChild(nextLineEl);
 
-            didHyphenate = true;
-          } else {
-            wordEl.innerText = word;
+              const remainingWord = document.createElement("span");
+              remainingWord.innerText = tail;
+              nextLineEl.appendChild(remainingWord);
+
+              const remainingWordSpaceEl = document.createElement("span");
+
+              remainingWordSpaceEl.innerHTML = "&nbsp;";
+              nextLineEl.appendChild(remainingWordSpaceEl);
+
+              remainingWordSpaceEl.dataset.sp = "true";
+
+              const breakEl = document.createElement("br");
+              lineEl.appendChild(breakEl);
+
+              currentLineWidth -= nextLineEl.offsetWidth;
+
+              didHyphenate = true;
+            } else {
+              wordEl.innerText = word;
+            }
           }
         }
 
@@ -203,7 +219,9 @@ const defaultOptions = {
     const lines: NodeListOf<HTMLSpanElement> =
       paragraph.querySelectorAll("span[data-li]");
 
-    lines.forEach((lineEl) => {
+    lines.forEach((lineEl, i) => {
+      targetWidth = paragraph.offsetWidth - (i === 0 ? indent : 0);
+
       const lastWordEl: HTMLSpanElement | null =
         lineEl.querySelector("span:last-of-type");
       const protrusionAmount = lastWordEl
@@ -236,7 +254,9 @@ const defaultOptions = {
 
     // adjust letter spacing
 
-    lines.forEach((lineEl) => {
+    lines.forEach((lineEl, i) => {
+      targetWidth = paragraph.offsetWidth - (i === 0 ? indent : 0);
+
       const lastWordEl: HTMLSpanElement | null =
         lineEl.querySelector("span:last-of-type");
       const protrusionAmount = lastWordEl
