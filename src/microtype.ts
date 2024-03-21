@@ -44,13 +44,20 @@ function microtype({
   console.log("microtype: initialising...");
 
   // Ensure created <span> elements do not inherit text-indent
-  const styleEl = document.createElement("style");
-  document.head.appendChild(styleEl);
-  const styleSheet = styleEl.sheet;
-  if (styleSheet) {
-    styleSheet.insertRule(`${selector} span { text-indent: 0!important; }`, 0);
-    if (showFrame) {
-      styleSheet.insertRule(`${selector} { outline: 1px solid red; }`, 0);
+  if (!document.querySelector("style[data-mt__style]")) {
+    const styleEl = document.createElement("style");
+    styleEl.dataset.mt__style = "true";
+    document.head.appendChild(styleEl);
+
+    const styleSheet = styleEl.sheet;
+    if (styleSheet) {
+      styleSheet.insertRule(
+        `${selector} span { text-indent: 0!important; }`,
+        0,
+      );
+      if (showFrame) {
+        styleSheet.insertRule(`${selector} { outline: 1px solid red; }`, 0);
+      }
     }
   }
 
@@ -85,15 +92,16 @@ function microtype({
     let currentLine = 0;
     let currentLineWidth = currentLine === 0 ? indent : 0;
 
-    let targetWidth;
+    // Measure the current paragraph width
+    let paragraphWidth = paragraph.offsetWidth;
 
     const words = text.split(" ");
 
     for (let i = 0; i < words.length; i++) {
       const word = words[i];
 
-      // If the first line is indented, out target width is the element width less the indentation
-      targetWidth = paragraph.offsetWidth - (currentLine === 0 ? indent : 0);
+      // If the first line is indented, the target width is the element width less the indentation
+      const targetWidth = paragraphWidth - (currentLine === 0 ? indent : 0);
 
       // Create (or get) the <span> element for the current line
       // The line will already have a <span> element if we wrapped a word from the previous line
@@ -258,6 +266,9 @@ function microtype({
       }
     }
 
+    // Re-measure current paragraph width
+    paragraphWidth = paragraph.offsetWidth;
+
     // Get all of the now hyphenated & wrapped lines
     const lines: NodeListOf<HTMLSpanElement> =
       paragraph.querySelectorAll("span[data-mt__li]");
@@ -268,7 +279,7 @@ function microtype({
       if (i === lines.length - 1) return;
 
       // Get the target width (accounting for indent if this is the first line) and the current width
-      targetWidth = paragraph.offsetWidth - (i === 0 ? indent : 0);
+      const targetWidth = paragraphWidth - (i === 0 ? indent : 0);
       let currentLineWidth = lineEl.offsetWidth;
 
       // Get the last word of the line and determine whether it ends in a protrude-able character
@@ -286,6 +297,7 @@ function microtype({
       const spaces: NodeListOf<HTMLSpanElement> = lineEl.querySelectorAll(
         'span[data-mt__sp="true"]',
       );
+      const defaultWidth = spaces[0].offsetWidth;
 
       // If the line is wider than the target, distribute the difference and shrink all spaces
       // If the target is wider than the line, distribute the difference and grow all spaces
@@ -294,18 +306,17 @@ function microtype({
           (currentLineWidth - adjustedTargetWidth) / spaces.length;
         spaces.forEach((spEl) => {
           spEl.style.display = "inline-block";
-          spEl.style.width = `${spEl.offsetWidth - Math.min(toShrink, maxSpaceShrink * em)}px`;
+          spEl.style.width = `${defaultWidth - Math.min(toShrink, maxSpaceShrink * em)}px`;
         });
       } else if (currentLineWidth < adjustedTargetWidth) {
         const toGrow = (adjustedTargetWidth - currentLineWidth) / spaces.length;
         spaces.forEach((spEl) => {
           spEl.style.display = "inline-block";
-          spEl.style.width = `${spEl.offsetWidth + Math.min(toGrow, maxSpaceGrow * em)}px`;
+          spEl.style.width = `${defaultWidth + Math.min(toGrow, maxSpaceGrow * em)}px`;
         });
       }
 
       // If target is still not met after adjusting spaces, adjust the letter spacing by the same principle
-      targetWidth = paragraph.offsetWidth - (i === 0 ? indent : 0);
       adjustedTargetWidth = targetWidth + protrusionAmount * em;
       currentLineWidth = lineEl.offsetWidth;
 
