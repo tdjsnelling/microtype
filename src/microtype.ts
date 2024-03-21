@@ -95,6 +95,10 @@ function microtype({
     // Measure the current paragraph width
     let paragraphWidth = paragraph.offsetWidth;
 
+    // Assumption is made that all unique elements (words and spaces) in a paragraph will be the same width initially
+    // This way we only need to measure the first we create
+    const elementWidths: { [key: string]: number } = {};
+
     const words = text.split(" ");
 
     for (let i = 0; i < words.length; i++) {
@@ -124,7 +128,9 @@ function microtype({
       lineEl.appendChild(wordEl);
 
       // Update the current line width
-      currentLineWidth += wordEl.offsetWidth;
+      if (!elementWidths[word]) elementWidths[word] = wordEl.offsetWidth;
+      const currentWordWidth = elementWidths[word];
+      currentLineWidth += currentWordWidth;
 
       // If another word follows, create a <span> element for the space character, fill it, and append it
       let spaceEl;
@@ -136,7 +142,8 @@ function microtype({
 
         spaceEl.dataset.mt__sp = "true";
 
-        currentLineWidth += spaceEl.offsetWidth;
+        if (!elementWidths._space) elementWidths._space = spaceEl.offsetWidth;
+        currentLineWidth += elementWidths._space;
       }
 
       // If the current line is wider than the target, we have some formatting to do
@@ -163,7 +170,7 @@ function microtype({
 
           if (split.length > 1) {
             const widthWordRemoved = Math.abs(
-              targetWidth - currentLineWidth - wordEl.offsetWidth,
+              targetWidth - currentLineWidth - currentWordWidth,
             );
             if (widthWordRemoved < bestWidthDiff) {
               bestWidthDiff = widthWordRemoved;
@@ -231,7 +238,7 @@ function microtype({
         if (!didHyphenate) {
           widthOver = currentLineWidth - targetWidth;
           const widthUnder = Math.abs(
-            currentLineWidth - wordEl.offsetWidth - targetWidth,
+            currentLineWidth - currentWordWidth - targetWidth,
           );
 
           if (widthOver > widthUnder) {
