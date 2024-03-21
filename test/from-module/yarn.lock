@@ -6680,10 +6680,9 @@ micromatch@^4.0.2, micromatch@^4.0.4, micromatch@^4.0.5:
     braces "^3.0.2"
     picomatch "^2.3.1"
 
-"microtype@file:../..":
-  version "1.0.0"
-  dependencies:
-    hyphen "^1.10.4"
+"microtype@link:../..":
+  version "0.0.0"
+  uid ""
 
 mime-db@1.52.0, "mime-db@>= 1.43.0 < 2":
   version "1.52.0"

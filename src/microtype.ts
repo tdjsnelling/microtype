@@ -1,7 +1,7 @@
 import { hyphenateSync } from "hyphen/en";
 
 type MicrotypeOptions = {
-  selector: string;
+  elements: HTMLElement[];
   maxSpaceShrink: number;
   maxSpaceGrow: number;
   maxTrackingShrink: number;
@@ -12,7 +12,7 @@ type MicrotypeOptions = {
 };
 
 const defaultOptions: MicrotypeOptions = {
-  selector: "p.microtype", // The CSS selector to perform formatting on
+  elements: [], // The array of elements to format
   maxSpaceShrink: 0.15, // How much space characters can shrink (em)
   maxSpaceGrow: 0.25, // How much space characters can grow (em)
   maxTrackingShrink: 0.01, // How much letter spacing can shrink (em)
@@ -29,7 +29,7 @@ const defaultOptions: MicrotypeOptions = {
 };
 
 function microtype({
-  selector = defaultOptions.selector,
+  elements = defaultOptions.elements,
   maxSpaceShrink = defaultOptions.maxSpaceShrink,
   maxSpaceGrow = defaultOptions.maxSpaceGrow,
   maxTrackingShrink = defaultOptions.maxTrackingShrink,
@@ -52,20 +52,22 @@ function microtype({
     const styleSheet = styleEl.sheet;
     if (styleSheet) {
       styleSheet.insertRule(
-        `${selector} span { text-indent: 0!important; }`,
+        "[data-microtype] span { text-indent: 0!important; }",
         0,
       );
       if (showFrame) {
-        styleSheet.insertRule(`${selector} { outline: 1px solid red; }`, 0);
+        styleSheet.insertRule(
+          `[data-microtype] { outline: 1px solid red; }`,
+          0,
+        );
       }
     }
   }
 
-  // Get the list of elements to format
-  const paragraphs: NodeListOf<HTMLParagraphElement> =
-    document.querySelectorAll(selector);
+  for (const paragraph of elements) {
+    // Flag this element as microtype-d
+    paragraph.dataset.microtype = "true";
 
-  for (const paragraph of paragraphs) {
     // Get paragraph text and empty the element of it's default contents
     let text = paragraph.innerText;
     paragraph.innerHTML = "";

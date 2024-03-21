@@ -3,18 +3,36 @@ import microtype from "microtype";
 
 function App() {
   useEffect(() => {
+    const elements = document.querySelectorAll("p.microtype");
+
     microtype({
-      showFrame: true,
+      elements,
     });
+
+    const ro = new ResizeObserver((entries) => {
+      window.requestAnimationFrame(() => {
+        if (!Array.isArray(entries) || !entries.length) {
+          return;
+        }
+        microtype({
+          elements: entries.map((e) => e.target),
+        });
+      });
+    });
+
+    for (const el of elements) {
+      ro.observe(el);
+    }
   }, []);
 
   return (
     <div
       style={{
-        fontSize: "18px",
+        fontSize: "20px",
         lineHeight: "1.3",
-        width: "32em",
+        maxWidth: "32em",
         margin: "0 auto",
+        padding: "40px",
       }}
     >
       <p className="microtype">
