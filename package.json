@@ -1,15 +1,22 @@
 {
-  "name": "microtype",
+  "name": "microtypejs",
   "version": "1.0.0",
   "main": "dist/esm/microtype.js",
   "types": "dist/microtype.d.ts",
   "license": "ISC",
+  "author": {
+    "name": "Tom Snelling",
+    "url": "https://tdjs.tech"
+  },
   "scripts": {
     "build:esm": "esbuild src/microtype.ts --bundle --minify --sourcemap --loader:.ts=ts --target=es6 --format=esm --outfile=dist/esm/microtype.js",
     "build:browser": "esbuild src/microtype.ts --bundle --minify --sourcemap --loader:.ts=ts --target=es6 --outfile=dist/microtype.js",
     "build": "yarn build:esm && yarn build:browser && yarn types",
     "types": "tsc --emitDeclarationOnly"
   },
+  "files": [
+    "/dist"
+  ],
   "devDependencies": {
     "@types/hyphen": "^1.6.7",
     "@typescript-eslint/eslint-plugin": "^7.3.1",

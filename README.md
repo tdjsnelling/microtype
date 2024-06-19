@@ -7,22 +7,22 @@ A JavaScript package that implements LaTeX-like text justification, hyphenation,
 The package can be installed via npm, and imported as an ES module:
 
 ```
-npm install microtype
+npm install microtypejs
 ```
 
 ```js
-import microtype from "microtype";
+import microtype from "microtypejs";
 ```
 
 Or loaded directly via a CDN:
 
 ```html
-<script src="TODO"></script>
+<script src="https://unpkg.com/microtypejs/dist/microtype.js"></script>
 ```
 
 Once the package is loaded, the most basic usage is just to call the `microtype` function with an array of elements you want to format.
 
-Elements to be formatted should contain nothing other than text.
+At present, the elements you want to format **must contain nothing but text**. Paragraphs containing inline elements are not supported. This is something I want to improve in the future.
 
 ```js
 microtype({
@@ -67,3 +67,5 @@ const defaultOptions: MicrotypeOptions = {
 ```
 
 ## Demo
+
+TODO
