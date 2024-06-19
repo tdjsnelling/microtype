@@ -68,4 +68,4 @@ const defaultOptions: MicrotypeOptions = {
 
 ## Demo
 
-TODO
+Visit [tdjsnelling.github.io/microtype](https://tdjsnelling.github.io/microtype/test/from-cdn/) for a live demo.
