@@ -8,6 +8,7 @@
     "name": "Tom Snelling",
     "url": "https://tdjs.tech"
   },
+  "repository": "https://github.com/tdjsnelling/microtype",
   "scripts": {
     "build:esm": "esbuild src/microtype.ts --bundle --minify --sourcemap --loader:.ts=ts --target=es6 --format=esm --outfile=dist/esm/microtype.js",
     "build:browser": "esbuild src/microtype.ts --bundle --minify --sourcemap --loader:.ts=ts --target=es6 --outfile=dist/microtype.js",
